@@ -1,13 +1,589 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moto Morini - Historia Timeline Parte 1</title>
+    <style>
+        :root {
+            --color-red: #D21010;
+            --color-gold: #BB9848;
+            --color-midnight: #1C1C1C;
+            --color-asphalt: #252525;
+            --color-black: rgba(0, 0, 0, 1);
+            --color-black50: rgba(0, 0, 0, 0.5);
+            --color-black20: rgba(0, 0, 0, 0.2);
+            --color-grey: #E8E8E8;
+            --color-lightgrey: #FAFAFA;
+            --color-white: rgba(255, 255, 255, 1);
+            --color-white50: rgba(255, 255, 255, 0.5);
+            --color-white20: rgba(255, 255, 255, 0.2);
+            --color-white04: rgba(255, 255, 255, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--color-black);
+            color: var(--color-white);
+            line-height: 1.6;
+        }
+
+        .timeline-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 0;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .timeline-item.animate {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .year-section {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 40px 0;
+        }
+
+        .year-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        .year-number {
+            font-size: clamp(180px, 30vw, 500px);
+            font-weight: 700;
+            color: var(--color-red);
+            line-height: 0.6;
+            background: linear-gradient(180deg, var(--color-red) 0%, var(--color-red) 60%, transparent 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            user-select: none;
+            position: relative;
+            margin-top: 40px;
+            font-stretch: ultra-condensed;
+            letter-spacing: -15px;
+        }
+
+        .year-number::after {
+            content: '';
+            position: absolute;
+            bottom: -300px;
+            left: 0;
+            right: 0;
+            height: 500px;
+            background: linear-gradient(180deg, transparent 0%, transparent 40%, rgba(0, 0, 0, 0.5) 70%, var(--color-black) 100%);
+            z-index: 2;
+        }
+
+        .content-overlay {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 4;
+            text-align: center;
+            width: clamp(600px, 80vw, 1000px);
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: clamp(18px, 2.5vw, 32px);
+            font-weight: 700;
+            color: var(--color-white);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+            text-align: center;
+        }
+
+        .section-description {
+            font-size: clamp(12px, 1.8vw, 16px);
+            color: var(--color-white);
+            line-height: 1.6;
+            max-width: 100%;
+            margin: 0;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+            text-align: justify;
+        }
+
+        .image-section {
+            position: relative;
+            padding: 60px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+
+        .timeline-image {
+            max-width: 500px;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 20px 40px var(--color-black50);
+            transition: transform 0.3s ease;
+        }
+
+        .timeline-image:hover {
+            transform: scale(1.02);
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* Overlapping images design */
+        .overlapping-images {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: var(--color-black);
+            padding: 60px 0;
+        }
+
+        .overlapping-container {
+            position: relative;
+            width: 90%;
+            max-width: 1400px;
+            height: 80%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-left {
+            position: absolute;
+            left: 20%;
+            top: 40%;
+            transform: translateY(-50%);
+            width: 45vw;
+            height: 70vh;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+        }
+
+        .image-right {
+            position: absolute;
+            left: 59%;
+            top: 60%;
+            transform: translateY(-50%);
+            width: 45vw;
+            height: 70vh;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 2;
+        }
+
+        .loading-placeholder {
+            background: var(--color-asphalt);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            color: var(--color-white50);
+        }
+
+        /* Moto image fullwidth section */
+        .moto-fullwidth-section {
+            position: relative;
+            width: 100vw;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            height: 100vh;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: var(--color-black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-section {
+                height: 50vh;
+                padding: 40px 30px;
+                margin-bottom: -5vh;
+            }
+            
+            .hero-title {
+                font-size: clamp(20px, 10vw, 80px);
+            }
+            
+            .content-overlay {
+                bottom: 20px;
+                width: 90vw;
+                padding: 15px;
+            }
+            
+            .year-number {
+                margin-top: 20px;
+                letter-spacing: -10px;
+                font-size: clamp(120px, 25vw, 300px);
+            }
+            
+            .section-description {
+                text-align: justify;
+            }
+
+            .moto-fullwidth-section {
+                height: 70vh;
+            }
+
+            .overlapping-images {
+                height: 80vh;
+                padding: 40px 0;
+            }
+
+            .overlapping-container {
+                width: 95%;
+            }
+            
+            .image-left {
+                left: 10%;
+                top: 35%;
+                width: 50vw;
+                height: 60vh;
+            }
+            
+            .image-right {
+                left: 55%;
+                top: 65%;
+                width: 50vw;
+                height: 60vh;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .year-section {
+                min-height: 70vh;
+                padding: 40px 0;
+            }
+
+            .section-title {
+                margin-bottom: 20px;
+            }
+
+            .image-section {
+                padding: 40px 0;
+            }
+        }
+
+        /* Hero section with background image */
+        .hero-section {
+            position: relative;
+            width: 100vw;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            height: 60vh;
+            background-image: url('images/antigua.webp');
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-start;
+            overflow: hidden;
+            padding: 60px;
+            margin-bottom: -10vh;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, 
+                rgba(0, 0, 0, 0.4) 0%, 
+                rgba(0, 0, 0, 0.7) 70%, 
+                var(--color-black) 100%);
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            text-align: left;
+            color: var(--color-white);
+        }
+
+        .hero-title {
+            font-size: clamp(60px, 12vw, 150px);
+            font-weight: 900;
+            color: var(--color-white);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="timeline-container">
+        
+        <!-- Hero Section con imagen antigua como background -->
+        <div class="timeline-item">
+            <div class="hero-section">
+                <div class="hero-overlay"></div>
+                <div class="hero-content">
+                    <h1 class="hero-title">HISTORIA</h1>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1937 - El principio de la aventura -->
+        <div class="timeline-item" data-year="1937">
+            <div class="year-section">
+                <div class="year-background">
+                    <div class="year-number">1937</div>
+                </div>
+                <div class="content-overlay">
+                    <h2 class="section-title">EL PRINCIPIO DE LA AVENTURA</h2>
+                    <p class="section-description">
+                        Tras casi 15 años de colaboración con Mario Mazzetti y MM, Alfonso Morini se estableció por su cuenta en septiembre de 1937. Abrió así una pequeña empresa en Via Malvasia, en Bolonia, donde en enero de 1938 comenzó a fabricar triciclos motorizados de 350, 500 y 600 cc. Una elección dictada por las condiciones de la época, ya que los vehículos de tres ruedas de origen motociclista gozan de exenciones fiscales, no requieren permiso de conducir y cuestan un tercio de los camiones. La fiabilidad y el buen rendimiento empiezan a dar a conocer la joven empresa boloñesa. Para la parte técnica, contrató a Dante Lambertini, Gino Marchesini y Dolcino Veronesi, que serían figuras clave cuando la empresa se dedicó al motociclismo después de la guerra, abandonando los triciclos motorizados.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imagen moto1 fullwidth -->
+        <div class="timeline-item">
+            <div class="moto-fullwidth-section" style="background-image: url('images/moto1.webp');"></div>
+        </div>
+
+        <!-- 1946 - La primera motocicleta -->
+        <div class="timeline-item" data-year="1946">
+            <div class="year-section">
+                <div class="year-background">
+                    <div class="year-number">1946</div>
+                </div>
+                <div class="content-overlay">
+                    <h2 class="section-title">LA PRIMERA MOTOCICLETA</h2>
+                    <p class="section-description">
+                        A pesar de que los bombardeos destruyeron la fábrica durante la guerra, Alfonso Morini no se desanimó y empezó de cero. Identificó el 125 de dos tiempos como el vehículo ideal para las necesidades de la posguerra. La primera Moto Morini apareció en la primavera de 1946 y se inspiró en la mejor 125 de la época, la DKW RT. La producción comenzó en la nueva fábrica de Via Ludovico Berti, también en Bolonia. La 125 fue la primera moto ligera que se fabricó en la Italia liberada del fascismo y cuando se presentó en el Salón de Milán de 1946 fue calificada por Motociclismo como «el éxito del año».
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imágenes moto2 y moto3 superpuestas -->
+        <div class="timeline-item">
+            <div class="overlapping-images">
+                <div class="overlapping-container">
+                    <div class="image-left" style="background-image: url('images/moto2.webp');"></div>
+                    <div class="image-right" style="background-image: url('images/moto3.webp');"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1947 - Turismo Sport -->
+        <div class="timeline-item" data-year="1947">
+            <div class="year-section">
+                <div class="year-background">
+                    <div class="year-number">1947</div>
+                </div>
+                <div class="content-overlay">
+                    <h2 class="section-title">TURISMO SPORT</h2>
+                    <p class="section-description">
+                        Al modelo turístico se le sumó la versión deportiva. La potencia aumentó de 4,5 CV a 5,7 CV, la velocidad de 75 a 80 km/h. El primer 125 superó a sus rivales en calidad, fiabilidad y confort (en su debut ya estaba equipado con suspensión trasera). La producción terminó en 1954. Con la 125 de dos tiempos empezaron a competir y consiguieron sus primeras victorias. Umberto Mascetti comenzó su brillante carrera con esta pequeña moto, que le regaló sus primeras satisfacciones, especialmente en 1948, cuando ganó varias carreras en el campeonato italiano de segunda categoría. La versión de competición tenía una caja de cambios de cuatro velocidades en lugar de tres, y desarrollaba 8/9 CV. La velocidad aproximada rondaba los 120 km/h.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imágenes persona1 y persona2 superpuestas -->
+        <div class="timeline-item">
+            <div class="overlapping-images">
+                <div class="overlapping-container">
+                    <div class="image-left" style="background-image: url('images/persona1.webp');"></div>
+                    <div class="image-right" style="background-image: url('images/persona2.webp');"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1949 - Ganadora de GP -->
+        <div class="timeline-item" data-year="1949">
+            <div class="year-section">
+                <div class="year-background">
+                    <div class="year-number">1949</div>
+                </div>
+                <div class="content-overlay">
+                    <h2 class="section-title">GANADORA DE GP</h2>
+                    <p class="section-description">
+                        Al darse cuenta de la supremacía de los motores de 4 tiempos, Alfonso Morini dio luz verde al proyecto de una nueva moto de GP, la 125 monoplaza con transmisión por cadena. Con una compresión de 9:1 y un carburador de 28 mm, ofrecía 12 CV a 10.000 rpm. El peso de la moto era de 80 kg. Además de varios títulos nacionales de primera categoría, fue la primera Moto Morini en ganar un GP, en 1951 en Monza con Emilio Mendogni, superando a las MV y Mondial de doble eje. En el pico de desarrollo alcanzaba los 16 CV.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imagen moto4 fullwidth -->
+        <div class="timeline-item">
+            <div class="moto-fullwidth-section" style="background-image: url('images/moto4.webp');"></div>
+        </div>
+
+        <!-- 1953 - 175 Settebello -->
+        <div class="timeline-item" data-year="1953">
+            <div class="year-section">
+                <div class="year-background">
+                    <div class="year-number">1953</div>
+                </div>
+                <div class="content-overlay">
+                    <h2 class="section-title">175 SETTEBELLO</h2>
+                    <p class="section-description">
+                        Debutó la 175 Settebello, tope de gama del fabricante boloñés, codiciada por quienes también querían participar en carreras, especialmente de larga distancia. Este modelo, que se desarrolló cada vez más para las carreras, alcanzó su punto álgido en 1962 con la versión con «Varillas Cortas» con 22 CV a 10 500 rpm. En 1954, se construyó la fabulosa 175 Settebello, destinada a la Milán-Taranto y al Motogiro de Italia. Monocilíndrico con sistema de distribución monoeje dividido capaz de desarrollar 22 CV a 9000 rpm. Tenía un bastidor muy eficaz -chasis de doble cuna abierta, suspensión hidráulica superior- y resultó ganadora en las dos carreras clásicas de larga distancia. Producida en unos 15 ejemplares, también se desarrolló como una 250 cc.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1955 - La nueva fábrica en Bolonia -->
+        <div class="timeline-item" data-year="1955">
+            <div class="year-section">
+                <div class="year-background">
+                    <div class="year-number">1955</div>
+                </div>
+                <div class="content-overlay">
+                    <h2 class="section-title">LA NUEVA FÁBRICA EN BOLONIA</h2>
+                    <p class="section-description">
+                        El aumento de la producción requería una nueva fábrica, por lo que Moto Morini se trasladó a Via Bergami 7, también en Bolonia, por supuesto.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imagen fabrica fullwidth -->
+        <div class="timeline-item">
+            <div class="moto-fullwidth-section" style="background-image: url('images/fabrica.webp');"></div>
+        </div>
+
+        <!-- 1957 - El nuevo proyecto para una GP 250cc -->
+        <div class="timeline-item" data-year="1957">
+            <div class="year-section">
+                <div class="year-background">
+                    <div class="year-number">1957</div>
+                </div>
+                <div class="content-overlay">
+                    <h2 class="section-title">EL NUEVO PROYECTO PARA UNA GP 250CC</h2>
+                    <p class="section-description">
+                        Alfonso Morini decidió que había llegado el momento de participar de manera continuada en el Campeonato de Mundo de Velocidad, por lo que Nerio Biavati, antigua mano derecha del técnico Alfonso Drusiani en el departamento de carreras de Mondial, desarrolló el nuevo diseño de una moto GP de 250 cc. Entregada a Mendogni, ganó la Coppa Shell en Imola en 1959, pero posteriormente no pudo contrarrestar a las MV. La desaparición de la 125 de dos tiempos obligó a Moto Morini a cubrir el hueco en el sector más popular del mercado. Descartada la idea de una reducida 175 de un solo cilindro, se optó por un nuevo diseño más moderno y racional, reduciendo también el número de componentes y limitando así los costes de producción. Así nació el Sbarazzino 100 -una cilindrada entonces todavía en boga- que, dos años después, serviría de base para el nacimiento del Corsaro 125.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imagen moto5 fullwidth -->
+        <div class="timeline-item">
+            <div class="moto-fullwidth-section" style="background-image: url('images/moto5.webp');"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // Intersection Observer para animaciones
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate');
+                }
+            });
+        }, observerOptions);
+
+        // Observar todos los elementos de la timeline
+        document.querySelectorAll('.timeline-item').forEach(item => {
+            observer.observe(item);
+        });
+
+        // Lazy loading para imágenes
+        const imageObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    if (img.dataset.src) {
+                        img.src = img.dataset.src;
+                        img.removeAttribute('data-src');
+                    }
+                    imageObserver.unobserve(img);
+                }
+            });
+        });
+
+        // Observar todas las imágenes
+        document.querySelectorAll('img[loading="lazy"]').forEach(img => {
+            imageObserver.observe(img);
+        });
+
+        // Smooth scroll behavior
+        document.documentElement.style.scrollBehavior = 'smooth';
+    </script>
+</body>
 </html>
